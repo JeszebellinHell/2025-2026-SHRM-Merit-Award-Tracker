@@ -75,8 +75,7 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
             />
           </div>
           <div>
-            <label htmlFor="meeting-attendees" className="block text-sm font-medium text-slate-700">Attendees</
-            label>
+            <label htmlFor="meeting-attendees" className="block text-sm font-medium text-slate-700">Attendees</label>
             <textarea
               id="meeting-attendees"
               value={attendees}

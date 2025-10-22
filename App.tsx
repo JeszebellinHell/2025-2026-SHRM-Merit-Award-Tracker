@@ -13,12 +13,16 @@ import MeetingsSection from './components/MeetingsSection';
 const App: React.FC = () => {
   const [completionStatus, setCompletionStatus] = useState<{ [key: string]: boolean }>({});
   const [events, setEvents] = useState<ChapterEvent[]>([]);
+  
+  // 1. State management for chapter meetings
   const [meetings, setMeetings] = useState<ChapterMeeting[]>([]);
 
+  // Load all persisted data on initial render
   useEffect(() => {
     try {
       const savedData = localStorage.getItem('shrmAwardTrackerData');
       if (savedData) {
+        // Load meetings along with other application data
         const { completionStatus, events, meetings } = JSON.parse(savedData);
         setCompletionStatus(completionStatus || {});
         setEvents(events || []);
@@ -29,8 +33,10 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // 2. Persist state to localStorage whenever data changes
   useEffect(() => {
     try {
+      // Save meetings along with other application data
       const dataToSave = { completionStatus, events, meetings };
       localStorage.setItem('shrmAwardTrackerData', JSON.stringify(dataToSave));
     } catch (error)      {
@@ -61,6 +67,7 @@ const App: React.FC = () => {
     setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
   };
 
+  // 3. Implement functions to add, update, and delete meetings
   const handleAddMeeting = (meetingData: Omit<ChapterMeeting, 'id'>) => {
     const newMeeting: ChapterMeeting = { ...meetingData, id: `mtg-${Date.now()}` };
     setMeetings(prevMeetings => [...prevMeetings, newMeeting].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -162,7 +169,6 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 md:p-8">
         <AwardProgress
           completedPrerequisites={completedPrerequisites}
-          // Fix: Use `allPrerequisites` which is defined in this scope.
           totalPrerequisites={allPrerequisites}
           completedActivities={completedActivities}
           currentAwardLevel={currentAwardLevel}
