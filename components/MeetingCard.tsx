@@ -23,6 +23,16 @@ const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 12 15 18 9"></polyline></svg>
 );
 
+const DocumentTextIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <line x1="10" y1="9" x2="8" y2="9"></line>
+    </svg>
+);
+
 const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onEdit, onDelete }) => {
     const [notesExpanded, setNotesExpanded] = useState(false);
     const formattedDate = new Date(meeting.date + 'T00:00:00').toLocaleDateString('en-US', {
@@ -34,7 +44,20 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onEdit, onDelete }) 
   return (
     <div className="bg-white p-5 rounded-xl shadow-lg border border-slate-200 flex flex-col h-full">
       <div className="flex-grow">
-        <h4 className="text-lg font-bold text-slate-800">{meeting.title}</h4>
+        <div className="flex items-center space-x-2">
+            <h4 className="text-lg font-bold text-slate-800">{meeting.title}</h4>
+            {meeting.notes && meeting.notes.trim() !== '' && (
+                <div className="relative group">
+                    <DocumentTextIcon className="text-slate-400 group-hover:text-slate-600" />
+                    <div 
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-max invisible group-hover:visible"
+                        role="tooltip"
+                    >
+                        Meeting notes recorded
+                    </div>
+                </div>
+            )}
+        </div>
         <p className="text-sm text-slate-500 mb-4">{formattedDate}</p>
 
         {/* Attendees */}
@@ -67,7 +90,7 @@ const MeetingCard: React.FC<MeetingCardProps> = ({ meeting, onEdit, onDelete }) 
             </button>
             {notesExpanded && (
                 <div className="mt-2 max-h-48 overflow-y-auto bg-slate-50 rounded-md p-3 border text-sm text-slate-700 prose prose-sm max-w-none">
-                    {meeting.notes ? (
+                    {meeting.notes && meeting.notes.trim() !== '' ? (
                         <p style={{ whiteSpace: 'pre-wrap' }}>{meeting.notes}</p>
                     ) : (
                         <p className="italic text-slate-500">No notes recorded for this meeting.</p>
