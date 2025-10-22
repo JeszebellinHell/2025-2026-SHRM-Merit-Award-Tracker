@@ -38,3 +38,5 @@ export interface ChapterMeeting {
   attendees: string[];
   notes: string;
 }
+
+export type CalendarItem = ChapterEvent | ChapterMeeting;

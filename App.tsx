@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AWARD_DATA, AWARD_LEVELS } from './constants';
-import type { AwardLevel, ChapterEvent, ChapterMeeting } from './types';
+import type { AwardLevel, ChapterEvent, ChapterMeeting, CalendarItem } from './types';
 import Header from './components/Header';
 import AwardProgress from './components/AwardProgress';
 import RequirementSection from './components/RequirementSection';
@@ -9,20 +9,19 @@ import AwardStatusCharts from './components/AwardStatusCharts';
 import EventsSection from './components/EventsSection';
 import PDCSummary from './components/PDCSummary';
 import MeetingsSection from './components/MeetingsSection';
+import CalendarView from './components/CalendarView';
+import CalendarEventModal from './components/CalendarEventModal';
 
 const App: React.FC = () => {
   const [completionStatus, setCompletionStatus] = useState<{ [key: string]: boolean }>({});
   const [events, setEvents] = useState<ChapterEvent[]>([]);
-  
-  // 1. State management for chapter meetings
   const [meetings, setMeetings] = useState<ChapterMeeting[]>([]);
+  const [selectedCalendarItem, setSelectedCalendarItem] = useState<CalendarItem | null>(null);
 
-  // Load all persisted data on initial render
   useEffect(() => {
     try {
       const savedData = localStorage.getItem('shrmAwardTrackerData');
       if (savedData) {
-        // Load meetings along with other application data
         const { completionStatus, events, meetings } = JSON.parse(savedData);
         setCompletionStatus(completionStatus || {});
         setEvents(events || []);
@@ -33,10 +32,8 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // 2. Persist state to localStorage whenever data changes
   useEffect(() => {
     try {
-      // Save meetings along with other application data
       const dataToSave = { completionStatus, events, meetings };
       localStorage.setItem('shrmAwardTrackerData', JSON.stringify(dataToSave));
     } catch (error)      {
@@ -67,7 +64,6 @@ const App: React.FC = () => {
     setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
   };
 
-  // 3. Implement functions to add, update, and delete meetings
   const handleAddMeeting = (meetingData: Omit<ChapterMeeting, 'id'>) => {
     const newMeeting: ChapterMeeting = { ...meetingData, id: `mtg-${Date.now()}` };
     setMeetings(prevMeetings => [...prevMeetings, newMeeting].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -84,6 +80,13 @@ const App: React.FC = () => {
     setMeetings(prevMeetings => prevMeetings.filter(meeting => meeting.id !== meetingId));
   };
 
+  const handleSelectCalendarItem = (item: any) => {
+    setSelectedCalendarItem(item.resource);
+  };
+
+  const handleCloseCalendarModal = () => {
+      setSelectedCalendarItem(null);
+  };
 
   const {
     completedPrerequisites,
@@ -179,6 +182,19 @@ const App: React.FC = () => {
           completedActivities={completedActivities}
           totalActivities={totalActivities}
         />
+
+        <CalendarView
+          events={events}
+          meetings={meetings}
+          onSelectItem={handleSelectCalendarItem}
+        />
+
+        {selectedCalendarItem && (
+          <CalendarEventModal
+            item={selectedCalendarItem}
+            onClose={handleCloseCalendarModal}
+          />
+        )}
 
         <PDCSummary events={events} />
 
