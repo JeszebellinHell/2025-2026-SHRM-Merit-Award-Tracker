@@ -1,236 +1,231 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
+import type { AwardLevel, ChapterEvent, ChapterMeeting, RequirementCategory, CalendarItem } from './types';
 import { AWARD_DATA, AWARD_LEVELS } from './constants';
-import type { AwardLevel, ChapterEvent, ChapterMeeting, CalendarItem } from './types';
 import Header from './components/Header';
 import AwardProgress from './components/AwardProgress';
 import RequirementSection from './components/RequirementSection';
 import AwardStatusCharts from './components/AwardStatusCharts';
 import EventsSection from './components/EventsSection';
-import PDCSummary from './components/PDCSummary';
 import MeetingsSection from './components/MeetingsSection';
+import PDCSummary from './components/PDCSummary';
 import CalendarView from './components/CalendarView';
 import CalendarEventModal from './components/CalendarEventModal';
+import AttendanceTracker from './components/AttendanceTracker';
 
 const App: React.FC = () => {
-  const [completionStatus, setCompletionStatus] = useState<{ [key: string]: boolean }>({});
-  const [events, setEvents] = useState<ChapterEvent[]>([]);
-  const [meetings, setMeetings] = useState<ChapterMeeting[]>([]);
-  const [selectedCalendarItem, setSelectedCalendarItem] = useState<CalendarItem | null>(null);
-
-  useEffect(() => {
-    try {
-      const savedData = localStorage.getItem('shrmAwardTrackerData');
-      if (savedData) {
-        const { completionStatus, events, meetings } = JSON.parse(savedData);
-        setCompletionStatus(completionStatus || {});
-        setEvents(events || []);
-        setMeetings(meetings || []);
-      }
-    } catch (error) {
-      console.error("Failed to load state from localStorage:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const dataToSave = { completionStatus, events, meetings };
-      localStorage.setItem('shrmAwardTrackerData', JSON.stringify(dataToSave));
-    } catch (error)      {
-      console.error("Failed to save state to localStorage:", error);
-    }
-  }, [completionStatus, events, meetings]);
-
-  const handleToggleRequirement = (id: string) => {
-    setCompletionStatus(prev => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-  
-  const handleAddEvent = (eventData: Omit<ChapterEvent, 'id'>) => {
-    const newEvent: ChapterEvent = { ...eventData, id: `evt-${Date.now()}` };
-    setEvents(prevEvents => [...prevEvents, newEvent].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  };
-
-  const handleUpdateEvent = (updatedEvent: ChapterEvent) => {
-    setEvents(prevEvents =>
-      prevEvents.map(event => (event.id === updatedEvent.id ? updatedEvent : event))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    );
-  };
-
-  const handleDeleteEvent = (eventId: string) => {
-    setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
-  };
-
-  const handleAddMeeting = (meetingData: Omit<ChapterMeeting, 'id'>) => {
-    const newMeeting: ChapterMeeting = { ...meetingData, id: `mtg-${Date.now()}` };
-    setMeetings(prevMeetings => [...prevMeetings, newMeeting].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  };
-
-  const handleUpdateMeeting = (updatedMeeting: ChapterMeeting) => {
-    setMeetings(prevMeetings =>
-      prevMeetings.map(meeting => (meeting.id === updatedMeeting.id ? updatedMeeting : meeting))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    );
-  };
-
-  const handleDeleteMeeting = (meetingId: string) => {
-    setMeetings(prevMeetings => prevMeetings.filter(meeting => meeting.id !== meetingId));
-  };
-
-  const handleSelectCalendarItem = (item: any) => {
-    setSelectedCalendarItem(item.resource);
-  };
-
-  const handleCloseCalendarModal = () => {
-      setSelectedCalendarItem(null);
-  };
-
-  const {
-    completedPrerequisites,
-    allPrerequisites,
-    completedActivities,
-    totalActivities,
-    categoryProgress,
-    currentAwardLevel
-  } = useMemo(() => {
-    let completedPrereqs = 0;
-    let totalPrereqs = 0;
-    let completedActs = 0;
-    let totalActs = 0;
-    const catProgress: { name: string; completed: number; total: number }[] = [];
-
-    const activitySection = AWARD_DATA.find(section => !section.isPrerequisite);
-
-    AWARD_DATA.forEach(section => {
-      if (section.isPrerequisite) {
-        section.categories.forEach(category => {
-          category.requirements.forEach(req => {
-            totalPrereqs++;
-            if (completionStatus[req.id]) {
-              completedPrereqs++;
-            }
-          });
-        });
-      }
+    // State management with localStorage persistence
+    const [completionStatus, setCompletionStatus] = useState<{ [key: string]: boolean }>(() => {
+        try {
+            const saved = localStorage.getItem('completionStatus');
+            return saved ? JSON.parse(saved) : {};
+        } catch (error) {
+            console.error("Failed to parse completionStatus from localStorage", error);
+            return {};
+        }
     });
 
-    if (activitySection) {
-        activitySection.categories.forEach(category => {
-            let completedInCategory = 0;
-            const totalInCategory = category.requirements.length;
-            totalActs += totalInCategory;
-
-            category.requirements.forEach(req => {
-                if (completionStatus[req.id]) {
-                    completedInCategory++;
-                }
-            });
-            
-            let shortName = category.title;
-            if (category.title === 'Chapter Programming & Career Development') shortName = 'Programming';
-            if (category.title === 'Community-Based Activities') shortName = 'Community';
-            if (category.title === 'SHRM Affiliate Support') shortName = 'Affiliate Support';
-
-            catProgress.push({
-                name: shortName,
-                completed: completedInCategory,
-                total: totalInCategory,
-            });
-        });
-    }
-
-    completedActs = catProgress.reduce((sum, cat) => sum + cat.completed, 0);
-
-    let awardLvl: AwardLevel | null = null;
-    if (completedPrereqs === totalPrereqs) {
-      for (let i = AWARD_LEVELS.length - 1; i >= 0; i--) {
-        if (completedActs >= AWARD_LEVELS[i].minActivities) {
-          awardLvl = AWARD_LEVELS[i];
-          break;
+    const [events, setEvents] = useState<ChapterEvent[]>(() => {
+        try {
+            const saved = localStorage.getItem('events');
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error("Failed to parse events from localStorage", error);
+            return [];
         }
-      }
-    }
+    });
 
-    return {
-      completedPrerequisites: completedPrereqs,
-      allPrerequisites: totalPrereqs,
-      completedActivities: completedActs,
-      totalActivities: totalActs,
-      categoryProgress: catProgress,
-      currentAwardLevel: awardLvl
+    const [meetings, setMeetings] = useState<ChapterMeeting[]>(() => {
+        try {
+            const saved = localStorage.getItem('meetings');
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error("Failed to parse meetings from localStorage", error);
+            return [];
+        }
+    });
+    
+    const [selectedCalendarItem, setSelectedCalendarItem] = useState<CalendarItem | null>(null);
+
+    useEffect(() => {
+        localStorage.setItem('completionStatus', JSON.stringify(completionStatus));
+    }, [completionStatus]);
+
+    useEffect(() => {
+        localStorage.setItem('events', JSON.stringify(events));
+    }, [events]);
+
+    useEffect(() => {
+        localStorage.setItem('meetings', JSON.stringify(meetings));
+    }, [meetings]);
+
+    const handleToggleRequirement = (id: string) => {
+        setCompletionStatus(prev => ({ ...prev, [id]: !prev[id] }));
     };
-  }, [completionStatus]);
 
-  const arePrerequisitesMet = completedPrerequisites === allPrerequisites;
+    // Event handlers
+    const handleAddEvent = (eventData: Omit<ChapterEvent, 'id'>) => {
+        const newEvent = { ...eventData, id: `evt-${Date.now()}` };
+        setEvents(prev => [...prev, newEvent].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    };
+    const handleUpdateEvent = (updatedEvent: ChapterEvent) => {
+        setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    };
+    const handleDeleteEvent = (eventId: string) => {
+        if (window.confirm('Are you sure you want to delete this event?')) {
+            setEvents(prev => prev.filter(e => e.id !== eventId));
+        }
+    };
 
-  return (
-    <div className="min-h-screen bg-slate-100 font-sans">
-      <Header />
-      <main className="container mx-auto p-4 md:p-8">
-        <AwardProgress
-          completedPrerequisites={completedPrerequisites}
-          totalPrerequisites={allPrerequisites}
-          completedActivities={completedActivities}
-          currentAwardLevel={currentAwardLevel}
-        />
+    // Meeting handlers
+    const handleAddMeeting = (meetingData: Omit<ChapterMeeting, 'id'>) => {
+        const newMeeting = { ...meetingData, id: `mtg-${Date.now()}` };
+        setMeetings(prev => [...prev, newMeeting].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    };
+    const handleUpdateMeeting = (updatedMeeting: ChapterMeeting) => {
+        setMeetings(prev => prev.map(m => m.id === updatedMeeting.id ? updatedMeeting : m).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    };
+    const handleDeleteMeeting = (meetingId: string) => {
+        if (window.confirm('Are you sure you want to delete this meeting?')) {
+            setMeetings(prev => prev.filter(m => m.id !== meetingId));
+        }
+    };
+
+    // Progress Calculation
+    const {
+        prerequisiteSections,
+        activitySection,
+        totalPrerequisites,
+        completedPrerequisites,
+        completedActivities,
+        currentAwardLevel,
+        categoryProgress
+    } = useMemo(() => {
+        const prerequisiteSections = AWARD_DATA.filter(s => s.isPrerequisite);
+        const activitySection = AWARD_DATA.find(s => !s.isPrerequisite);
+
+        const allPrerequisites = prerequisiteSections.flatMap(s => s.categories.flatMap(c => c.requirements));
+        const totalPrerequisites = allPrerequisites.length;
+        const completedPrerequisites = allPrerequisites.filter(r => completionStatus[r.id]).length;
+
+        const allActivities = activitySection?.categories.flatMap(c => c.requirements) || [];
+        const completedActivities = allActivities.filter(r => completionStatus[r.id]).length;
+
+        const arePrerequisitesMet = completedPrerequisites === totalPrerequisites;
+        let currentAwardLevel: AwardLevel | null = null;
+        if (arePrerequisitesMet) {
+            currentAwardLevel = [...AWARD_LEVELS].reverse().find(level => completedActivities >= level.minActivities) || null;
+        }
         
-        <AwardStatusCharts 
-          categoryProgress={categoryProgress}
-          completedActivities={completedActivities}
-          totalActivities={totalActivities}
-        />
+        const categoryProgress = activitySection?.categories.map((cat: RequirementCategory) => ({
+            name: cat.title,
+            completed: cat.requirements.filter(req => completionStatus[req.id]).length,
+            total: cat.requirements.length,
+        })) || [];
 
-        <CalendarView
-          events={events}
-          meetings={meetings}
-          onSelectItem={handleSelectCalendarItem}
-        />
+        return {
+            prerequisiteSections,
+            activitySection,
+            totalPrerequisites,
+            completedPrerequisites,
+            completedActivities,
+            currentAwardLevel,
+            categoryProgress,
+        };
+    }, [completionStatus]);
 
-        {selectedCalendarItem && (
-          <CalendarEventModal
-            item={selectedCalendarItem}
-            onClose={handleCloseCalendarModal}
-          />
-        )}
+    const isPrerequisitesMetForActivities = completedPrerequisites === totalPrerequisites;
+    
+    const handleSelectCalendarItem = (item: any) => {
+        setSelectedCalendarItem(item.resource);
+    };
 
-        <PDCSummary events={events} />
+    const handleCloseCalendarModal = () => {
+        setSelectedCalendarItem(null);
+    };
 
-        <EventsSection
-          events={events}
-          onAddEvent={handleAddEvent}
-          onUpdateEvent={handleUpdateEvent}
-          onDeleteEvent={handleDeleteEvent}
-        />
+    return (
+        <div className="bg-slate-50 min-h-screen">
+            <Header />
+            <main className="container mx-auto px-4 md:px-8 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                    <div className="lg:col-span-4">
+                        <AwardProgress
+                            completedPrerequisites={completedPrerequisites}
+                            totalPrerequisites={totalPrerequisites}
+                            completedActivities={completedActivities}
+                            currentAwardLevel={currentAwardLevel}
+                        />
+                    </div>
 
-        <MeetingsSection
-          meetings={meetings}
-          onAddMeeting={handleAddMeeting}
-          onUpdateMeeting={handleUpdateMeeting}
-          onDeleteMeeting={handleDeleteMeeting}
-        />
+                    {prerequisiteSections.map(section => (
+                        <RequirementSection
+                            key={section.title}
+                            section={section}
+                            completionStatus={completionStatus}
+                            onToggleRequirement={handleToggleRequirement}
+                            isPrerequisitesMetForActivities={true} // Prerequisites are always enabled
+                            className="bg-white p-6 rounded-xl shadow-lg border border-slate-200 lg:col-span-4"
+                        />
+                    ))}
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {AWARD_DATA.map((section, index) => (
-            <RequirementSection
-              key={section.title}
-              section={section}
-              completionStatus={completionStatus}
-              onToggleRequirement={handleToggleRequirement}
-              isPrerequisitesMetForActivities={arePrerequisitesMet}
-              className={index < 2 ? 'lg:col-span-3 grid md:grid-cols-2 lg:grid-cols-3 gap-4' : 'lg:col-span-3'}
-            />
-          ))}
+                    {activitySection && (
+                        <RequirementSection
+                            key={activitySection.title}
+                            section={activitySection}
+                            completionStatus={completionStatus}
+                            onToggleRequirement={handleToggleRequirement}
+                            isPrerequisitesMetForActivities={isPrerequisitesMetForActivities}
+                        />
+                    )}
+                    
+                    <div className="lg:col-span-4">
+                         <AwardStatusCharts
+                            categoryProgress={categoryProgress}
+                            completedActivities={completedActivities}
+                            totalActivities={activitySection?.categories.flatMap(c => c.requirements).length || 12}
+                        />
+                    </div>
+                    
+                    <div className="lg:col-span-4">
+                        <EventsSection 
+                            events={events}
+                            onAddEvent={handleAddEvent}
+                            onUpdateEvent={handleUpdateEvent}
+                            onDeleteEvent={handleDeleteEvent}
+                        />
+                    </div>
+
+                    <div className="lg:col-span-4">
+                        <MeetingsSection
+                            meetings={meetings}
+                            onAddMeeting={handleAddMeeting}
+                            onUpdateMeeting={handleUpdateMeeting}
+                            onDeleteMeeting={handleDeleteMeeting}
+                        />
+                    </div>
+                    
+                    <div className="lg:col-span-4">
+                        <PDCSummary events={events} />
+                    </div>
+
+                    <div className="lg:col-span-4">
+                        <AttendanceTracker events={events} meetings={meetings} />
+                    </div>
+
+                    <div className="lg:col-span-4">
+                        <CalendarView 
+                            events={events} 
+                            meetings={meetings}
+                            onSelectItem={handleSelectCalendarItem}
+                        />
+                    </div>
+                </div>
+            </main>
+             {selectedCalendarItem && (
+                <CalendarEventModal item={selectedCalendarItem} onClose={handleCloseCalendarModal} />
+            )}
         </div>
-      </main>
-      <footer className="text-center py-6 text-slate-500 text-sm">
-        <p>Built for the WGU SHRM Virtual Student Chapter.</p>
-        <p>Based on the official SHRM Student Chapter Merit Award criteria.</p>
-      </footer>
-    </div>
-  );
+    );
 };
 
 export default App;
