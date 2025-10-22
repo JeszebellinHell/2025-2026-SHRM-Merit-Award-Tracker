@@ -38,6 +38,14 @@ const SortDescIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
+const DownloadIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+);
+
 interface AttendanceTrackerProps {
   events: ChapterEvent[];
   meetings: ChapterMeeting[];
@@ -94,6 +102,42 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ events, meetings 
             setSortDirection('desc');
         }
     };
+
+    const handleExportCSV = () => {
+        if (attendanceData.length === 0) return;
+
+        const headers = ['Member Name', 'Total Attendance', 'Events Attended', 'Meetings Attended'];
+        
+        const escapeCsvCell = (cell: string | number) => {
+            const cellStr = String(cell);
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+        };
+
+        const csvRows = [
+            headers.join(','),
+            ...attendanceData.map(row => [
+                escapeCsvCell(row.name),
+                row.totalCount,
+                row.eventCount,
+                row.meetingCount
+            ].join(','))
+        ];
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'wgu-shrm-attendance.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
     
     const SortIcon = sortDirection === 'asc' ? SortAscIcon : SortDescIcon;
 
@@ -109,14 +153,25 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ events, meetings 
 
   return (
     <div className="mt-8 bg-white p-6 rounded-xl shadow-lg border border-slate-200">
-        <div className="flex items-center mb-4">
-            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg mr-4">
-                <UserGroupIcon />
+        <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center">
+                <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg mr-4">
+                    <UserGroupIcon />
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-slate-800">Member Attendance Tracker</h3>
+                    <p className="text-slate-500">Summary of member participation in events and meetings.</p>
+                </div>
             </div>
-            <div>
-                <h3 className="text-xl font-bold text-slate-800">Member Attendance Tracker</h3>
-                <p className="text-slate-500">Summary of member participation in events and meetings.</p>
-            </div>
+            <button
+                onClick={handleExportCSV}
+                disabled={attendanceData.length === 0}
+                className="flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Export attendance data to CSV"
+            >
+                <DownloadIcon />
+                <span>Export CSV</span>
+            </button>
         </div>
 
         <div className="overflow-x-auto">
