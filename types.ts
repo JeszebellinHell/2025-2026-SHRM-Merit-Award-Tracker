@@ -1,4 +1,3 @@
-
 export interface Requirement {
   id: string;
   title: string;
@@ -22,4 +21,12 @@ export interface AwardLevel {
   minActivities: number;
   maxActivities?: number;
   className: string;
+}
+
+export interface ChapterEvent {
+  id: string;
+  title: string;
+  date: string; // Using string for simplicity, e.g., 'YYYY-MM-DD'
+  attendees: string[];
+  pdcs: number;
 }

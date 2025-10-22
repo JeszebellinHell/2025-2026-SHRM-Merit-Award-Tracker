@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AWARD_DATA, AWARD_LEVELS } from './constants';
-import type { AwardLevel } from './types';
+import type { AwardLevel, ChapterEvent } from './types';
 import Header from './components/Header';
 import AwardProgress from './components/AwardProgress';
 import RequirementSection from './components/RequirementSection';
 import AwardStatusCharts from './components/AwardStatusCharts';
+import EventsSection from './components/EventsSection';
 
 const App: React.FC = () => {
   const [completionStatus, setCompletionStatus] = useState<{ [key: string]: boolean }>({});
+  const [events, setEvents] = useState<ChapterEvent[]>([]);
 
   useEffect(() => {
     try {
-      const savedStatus = localStorage.getItem('shrmAwardTrackerStatus');
-      if (savedStatus) {
-        setCompletionStatus(JSON.parse(savedStatus));
+      const savedData = localStorage.getItem('shrmAwardTrackerData');
+      if (savedData) {
+        const { completionStatus, events } = JSON.parse(savedData);
+        setCompletionStatus(completionStatus || {});
+        setEvents(events || []);
       }
     } catch (error) {
       console.error("Failed to load state from localStorage:", error);
@@ -22,11 +26,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('shrmAwardTrackerStatus', JSON.stringify(completionStatus));
+      const dataToSave = { completionStatus, events };
+      localStorage.setItem('shrmAwardTrackerData', JSON.stringify(dataToSave));
     } catch (error)      {
       console.error("Failed to save state to localStorage:", error);
     }
-  }, [completionStatus]);
+  }, [completionStatus, events]);
 
   const handleToggleRequirement = (id: string) => {
     setCompletionStatus(prev => ({
@@ -34,6 +39,23 @@ const App: React.FC = () => {
       [id]: !prev[id],
     }));
   };
+  
+  const handleAddEvent = (eventData: Omit<ChapterEvent, 'id'>) => {
+    const newEvent: ChapterEvent = { ...eventData, id: `evt-${Date.now()}` };
+    setEvents(prevEvents => [...prevEvents, newEvent].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  };
+
+  const handleUpdateEvent = (updatedEvent: ChapterEvent) => {
+    setEvents(prevEvents =>
+      prevEvents.map(event => (event.id === updatedEvent.id ? updatedEvent : event))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    );
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+  };
+
 
   const {
     completedPrerequisites,
@@ -128,6 +150,13 @@ const App: React.FC = () => {
           categoryProgress={categoryProgress}
           completedActivities={completedActivities}
           totalActivities={totalActivities}
+        />
+
+        <EventsSection
+          events={events}
+          onAddEvent={handleAddEvent}
+          onUpdateEvent={handleUpdateEvent}
+          onDeleteEvent={handleDeleteEvent}
         />
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">

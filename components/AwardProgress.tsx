@@ -10,6 +10,20 @@ interface AwardProgressProps {
   currentAwardLevel: AwardLevel | null;
 }
 
+const RibbonIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+    </svg>
+);
+
+const MedalIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="8" r="6"/>
+    <path d="M15.48 13.9a6.5 6.5 0 0 0-6.96 0"/>
+    <path d="M8 16v4l4-2 4 2v-4"/>
+  </svg>
+);
+
 const TrophyIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
@@ -114,35 +128,52 @@ const AwardProgress: React.FC<AwardProgressProps> = ({
             <span className="text-sm font-medium text-slate-600">Merit Award Activities</span>
             <span className="text-sm font-semibold text-slate-600">{completedActivities} / 12</span>
           </div>
-          <div className="relative w-full bg-slate-200 rounded-full h-4 overflow-hidden">
-             {/* Award Level Background Segments */}
-            <div className="absolute w-full h-full" aria-hidden="true">
-              {AWARD_LEVELS.map(level => {
-                  const segmentBgClasses: { [key: string]: string } = {
-                      "Honorable Mention": "bg-green-200/75",
-                      "Merit Award": "bg-blue-200/75",
-                      "Superior Merit Award": "bg-purple-200/75",
-                  };
-                  const leftPercentage = ((level.minActivities - 1) / 12) * 100;
-                  const widthPercentage = (((level.maxActivities || 12) - level.minActivities + 1) / 12) * 100;
-                  
-                  return (
-                      <div
-                          key={`${level.name}-bg`}
-                          className={`absolute h-full ${segmentBgClasses[level.name]}`}
-                          style={{
-                              left: `${leftPercentage}%`,
-                              width: `${widthPercentage}%`,
-                          }}
-                      />
-                  );
-              })}
+          <div className="relative w-full bg-slate-200 rounded-full h-5">
+            {/* Tiered Background */}
+            <div className="absolute w-full h-full flex rounded-full overflow-hidden" aria-hidden="true">
+                {AWARD_LEVELS.map((level) => {
+                    const segmentBgClasses: { [key: string]: string } = {
+                        "Honorable Mention": "bg-green-200",
+                        "Merit Award": "bg-blue-200",
+                        "Superior Merit Award": "bg-purple-200",
+                    };
+                    const widthPercentage = (((level.maxActivities || 12) - level.minActivities + 1) / 12) * 100;
+                    return (
+                        <div key={`${level.name}-bg`} className={`h-full ${segmentBgClasses[level.name]}`} style={{ width: `${widthPercentage}%` }} />
+                    );
+                })}
             </div>
-            {/* Actual Progress Fill */}
+            
+            {/* Progress Fill */}
             <div
-              className="relative bg-green-500 h-full transition-all duration-500"
-              style={{ width: `${activityProgress}%` }}
+                className="absolute h-full bg-yellow-400 rounded-full border-r-2 border-yellow-300 shadow-inner transition-all duration-500"
+                style={{ width: `${activityProgress}%` }}
             />
+            
+            {/* Tier Icons */}
+            <div className="absolute w-full h-full" aria-hidden="true">
+                {AWARD_LEVELS.map(level => {
+                    const iconPosition = ((level.maxActivities || 12) / 12) * 100;
+                    let Icon: React.FC<{className?: string}>;
+                    let iconColor = '';
+                    
+                    switch(level.name) {
+                        case 'Honorable Mention': Icon = RibbonIcon; iconColor = 'text-green-700'; break;
+                        case 'Merit Award': Icon = MedalIcon; iconColor = 'text-blue-700'; break;
+                        default: Icon = TrophyIcon; iconColor = 'text-purple-700';
+                    }
+                    
+                    return (
+                        <div
+                            key={`${level.name}-icon`}
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center"
+                            style={{ left: `${iconPosition}%` }}
+                        >
+                            <Icon className={`h-5 w-5 ${iconColor} drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]`} />
+                        </div>
+                    );
+                })}
+            </div>
           </div>
            <div className="flex justify-between mt-1 text-xs text-slate-500">
             {AWARD_LEVELS.map(level => (
