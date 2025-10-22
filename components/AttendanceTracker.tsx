@@ -118,6 +118,18 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ events, meetings 
                 <p className="text-slate-500">Summary of member participation in events and meetings.</p>
             </div>
         </div>
+        
+        <div className="flex justify-end items-center space-x-4 mb-2 text-xs text-slate-500">
+            <span>Breakdown Legend:</span>
+            <div className="flex items-center space-x-1.5">
+                <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                <span>Events</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+                <div className="w-3 h-3 rounded-sm bg-green-500"></div>
+                <span>Meetings</span>
+            </div>
+        </div>
 
         <div className="overflow-x-auto">
             {attendanceData.length > 0 ? (
@@ -125,18 +137,38 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ events, meetings 
                     <thead className="bg-slate-50">
                         <tr>
                             {renderHeader('name', 'Member Name')}
-                            {renderHeader('totalCount', 'Total Attendance')}
-                            {renderHeader('eventCount', 'Events Attended')}
-                            {renderHeader('meetingCount', 'Meetings Attended')}
+                            {renderHeader('totalCount', 'Total')}
+                            {renderHeader('eventCount', 'Events')}
+                            {renderHeader('meetingCount', 'Meetings')}
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                Breakdown
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
                         {attendanceData.map(person => (
                             <tr key={person.name}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{person.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">{person.totalCount}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center font-semibold">{person.totalCount}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">{person.eventCount}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">{person.meetingCount}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {person.totalCount > 0 && (
+                                        <div 
+                                            className="w-full max-w-[100px] h-4 bg-slate-200 rounded-full flex overflow-hidden" 
+                                            title={`Events: ${person.eventCount}, Meetings: ${person.meetingCount}`}
+                                        >
+                                            <div
+                                                className="h-full bg-blue-500 transition-all"
+                                                style={{ width: `${(person.eventCount / person.totalCount) * 100}%` }}
+                                            ></div>
+                                            <div
+                                                className="h-full bg-green-500 transition-all"
+                                                style={{ width: `${(person.meetingCount / person.totalCount) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
