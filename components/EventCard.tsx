@@ -15,6 +15,10 @@ const DeleteIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
 );
 
+const UserIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+);
+
 const EventCard: React.FC<EventCardProps> = ({ event, onEdit, onDelete }) => {
     const formattedDate = new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', {
         year: 'numeric',
@@ -37,15 +41,18 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEdit, onDelete }) => {
         
         <div className="mt-4">
             <h5 className="text-sm font-semibold text-slate-600 mb-2">Attendance ({event.attendees.length})</h5>
-            <div className="max-h-28 overflow-y-auto bg-slate-50 rounded-md p-2 border">
+            <div className="max-h-32 overflow-y-auto bg-slate-50 rounded-md p-3 border">
                 {event.attendees.length > 0 ? (
-                    <ul className="text-sm text-slate-700 space-y-1">
+                    <ul className="text-sm text-slate-700 space-y-2">
                         {event.attendees.map((attendee, index) => (
-                            <li key={index} className="truncate">{attendee}</li>
+                            <li key={index} className="flex items-center space-x-2">
+                                <UserIcon className="text-slate-400 flex-shrink-0" />
+                                <span className="truncate">{attendee}</span>
+                            </li>
                         ))}
                     </ul>
                 ) : (
-                     <p className="text-sm text-slate-500 italic">No attendees listed.</p>
+                     <p className="text-sm text-slate-500 italic text-center py-4">No attendees listed.</p>
                 )}
             </div>
         </div>

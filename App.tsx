@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { AWARD_DATA, AWARD_LEVELS } from './constants';
 import type { AwardLevel, ChapterEvent } from './types';
@@ -6,6 +7,7 @@ import AwardProgress from './components/AwardProgress';
 import RequirementSection from './components/RequirementSection';
 import AwardStatusCharts from './components/AwardStatusCharts';
 import EventsSection from './components/EventsSection';
+import PDCSummary from './components/PDCSummary';
 
 const App: React.FC = () => {
   const [completionStatus, setCompletionStatus] = useState<{ [key: string]: boolean }>({});
@@ -141,6 +143,7 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 md:p-8">
         <AwardProgress
           completedPrerequisites={completedPrerequisites}
+          // Fix: Use `allPrerequisites` which is defined in this scope.
           totalPrerequisites={allPrerequisites}
           completedActivities={completedActivities}
           currentAwardLevel={currentAwardLevel}
@@ -151,6 +154,8 @@ const App: React.FC = () => {
           completedActivities={completedActivities}
           totalActivities={totalActivities}
         />
+
+        <PDCSummary events={events} />
 
         <EventsSection
           events={events}
