@@ -30,3 +30,11 @@ export interface ChapterEvent {
   attendees: string[];
   pdcs: number;
 }
+
+export interface ChapterMeeting {
+  id: string;
+  title: string;
+  date: string;
+  attendees: string[];
+  notes: string;
+}

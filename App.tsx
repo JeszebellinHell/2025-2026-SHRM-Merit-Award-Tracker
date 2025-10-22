@@ -1,25 +1,28 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AWARD_DATA, AWARD_LEVELS } from './constants';
-import type { AwardLevel, ChapterEvent } from './types';
+import type { AwardLevel, ChapterEvent, ChapterMeeting } from './types';
 import Header from './components/Header';
 import AwardProgress from './components/AwardProgress';
 import RequirementSection from './components/RequirementSection';
 import AwardStatusCharts from './components/AwardStatusCharts';
 import EventsSection from './components/EventsSection';
 import PDCSummary from './components/PDCSummary';
+import MeetingsSection from './components/MeetingsSection';
 
 const App: React.FC = () => {
   const [completionStatus, setCompletionStatus] = useState<{ [key: string]: boolean }>({});
   const [events, setEvents] = useState<ChapterEvent[]>([]);
+  const [meetings, setMeetings] = useState<ChapterMeeting[]>([]);
 
   useEffect(() => {
     try {
       const savedData = localStorage.getItem('shrmAwardTrackerData');
       if (savedData) {
-        const { completionStatus, events } = JSON.parse(savedData);
+        const { completionStatus, events, meetings } = JSON.parse(savedData);
         setCompletionStatus(completionStatus || {});
         setEvents(events || []);
+        setMeetings(meetings || []);
       }
     } catch (error) {
       console.error("Failed to load state from localStorage:", error);
@@ -28,12 +31,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     try {
-      const dataToSave = { completionStatus, events };
+      const dataToSave = { completionStatus, events, meetings };
       localStorage.setItem('shrmAwardTrackerData', JSON.stringify(dataToSave));
     } catch (error)      {
       console.error("Failed to save state to localStorage:", error);
     }
-  }, [completionStatus, events]);
+  }, [completionStatus, events, meetings]);
 
   const handleToggleRequirement = (id: string) => {
     setCompletionStatus(prev => ({
@@ -56,6 +59,22 @@ const App: React.FC = () => {
 
   const handleDeleteEvent = (eventId: string) => {
     setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+  };
+
+  const handleAddMeeting = (meetingData: Omit<ChapterMeeting, 'id'>) => {
+    const newMeeting: ChapterMeeting = { ...meetingData, id: `mtg-${Date.now()}` };
+    setMeetings(prevMeetings => [...prevMeetings, newMeeting].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  };
+
+  const handleUpdateMeeting = (updatedMeeting: ChapterMeeting) => {
+    setMeetings(prevMeetings =>
+      prevMeetings.map(meeting => (meeting.id === updatedMeeting.id ? updatedMeeting : meeting))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    );
+  };
+
+  const handleDeleteMeeting = (meetingId: string) => {
+    setMeetings(prevMeetings => prevMeetings.filter(meeting => meeting.id !== meetingId));
   };
 
 
@@ -162,6 +181,13 @@ const App: React.FC = () => {
           onAddEvent={handleAddEvent}
           onUpdateEvent={handleUpdateEvent}
           onDeleteEvent={handleDeleteEvent}
+        />
+
+        <MeetingsSection
+          meetings={meetings}
+          onAddMeeting={handleAddMeeting}
+          onUpdateMeeting={handleUpdateMeeting}
+          onDeleteMeeting={handleDeleteMeeting}
         />
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
