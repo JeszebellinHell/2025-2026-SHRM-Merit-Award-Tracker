@@ -19,6 +19,14 @@ const UserIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
 );
 
+const InformationIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+);
+
 const EventCard: React.FC<EventCardProps> = ({ event, onEdit, onDelete }) => {
     const formattedDate = new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', {
         year: 'numeric',
@@ -34,8 +42,17 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEdit, onDelete }) => {
                 <h4 className="text-lg font-bold text-slate-800">{event.title}</h4>
                 <p className="text-sm text-slate-500 mb-1">{formattedDate}</p>
             </div>
-            <div className="flex-shrink-0 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">
-                {event.pdcs} PDC{event.pdcs !== 1 ? 's' : ''}
+            <div className="relative group flex items-center">
+              <div className="flex items-center space-x-1.5 flex-shrink-0 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full cursor-help">
+                  <span>{event.pdcs} PDC{event.pdcs !== 1 ? 's' : ''}</span>
+                  <InformationIcon className="text-blue-700" />
+              </div>
+              <div 
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-max invisible group-hover:visible"
+                  role="tooltip"
+              >
+                  Professional Development Credits
+              </div>
             </div>
         </div>
         
