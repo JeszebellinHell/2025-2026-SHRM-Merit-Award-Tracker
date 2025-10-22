@@ -146,12 +146,29 @@ const AwardProgress: React.FC<AwardProgressProps> = ({
             
             {/* Progress Fill */}
             <div
-                className="absolute h-full bg-yellow-400 rounded-full border-r-2 border-yellow-300 shadow-inner transition-all duration-500"
+                className="absolute h-full bg-yellow-400 rounded-full border-r-2 border-yellow-300 shadow-inner transition-all duration-500 z-10"
                 style={{ width: `${activityProgress}%` }}
             />
             
+            {/* Threshold Markers */}
+            <div className="absolute w-full h-full pointer-events-none z-20" aria-hidden="true">
+                {AWARD_LEVELS.map(level => {
+                    const thresholdPosition = (level.minActivities / 12) * 100;
+                    if (thresholdPosition === 0) return null;
+
+                    return (
+                        <div
+                            key={`${level.name}-threshold`}
+                            className="absolute top-0 h-full border-l border-dashed border-slate-600/60"
+                            style={{ left: `${thresholdPosition}%` }}
+                            title={`${level.name} starts at ${level.minActivities} activities`}
+                        />
+                    );
+                })}
+            </div>
+
             {/* Tier Icons */}
-            <div className="absolute w-full h-full" aria-hidden="true">
+            <div className="absolute w-full h-full z-20" aria-hidden="true">
                 {AWARD_LEVELS.map(level => {
                     const iconPosition = ((level.maxActivities || 12) / 12) * 100;
                     let Icon: React.FC<{className?: string}>;
